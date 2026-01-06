@@ -1,27 +1,22 @@
 import requests
-
-BASE_URL = "https://attendance-for-demo.onrender.com"
-
+from config import API_BASE_URL
 
 def start_session(teacher_id, subject, classroom):
-    url = f"{BASE_URL}/attendance/start-session"
-    payload = {
+    url = f"{API_BASE_URL}/attendance/start-session"
+    r = requests.post(url, json={
         "teacher_id": teacher_id,
         "subject": subject,
         "classroom": classroom
-    }
-    return requests.post(url, json=payload).json()
-
+    })
+    return r.json()
 
 def mark_attendance(session_id, student_id):
-    url = f"{BASE_URL}/attendance/report-presence"
-    payload = {
+    url = f"{API_BASE_URL}/attendance/report-presence"
+    requests.post(url, json={
         "session_id": session_id,
         "student_id": student_id
-    }
-    return requests.post(url, json=payload).json()
-
+    })
 
 def get_attendance(session_id):
-    url = f"{BASE_URL}/attendance/session/{session_id}"
+    url = f"{API_BASE_URL}/attendance/session/{session_id}"
     return requests.get(url).json()

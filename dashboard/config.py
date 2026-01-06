@@ -1,3 +1,4 @@
 # dashboard/config.py
 
-BACKEND_URL = "http://localhost:8000"
+API_BASE_URL = "https://attendance-for-demo.onrender.com"
+

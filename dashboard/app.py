@@ -4,6 +4,8 @@ from io import BytesIO
 from api_client import start_session, mark_attendance
 from components.attendance_table import render_attendance_table
 
+st.caption("Build verified: fresh repo deployment")
+
 st.set_page_config(
     page_title="BLE Smart Attendance (Demo)",
     layout="centered"
