@@ -1,58 +1,74 @@
 import streamlit as st
-import requests
-from api_client import start_session
+import qrcode
+from io import BytesIO
+from api_client import start_session, mark_attendance
 from components.attendance_table import render_attendance_table
 
-BACKEND_URL = "http://localhost:8000"
+st.set_page_config(
+    page_title="BLE Smart Attendance (Demo)",
+    layout="centered"
+)
 
-st.set_page_config(page_title="Smart Attendance Dashboard", layout="centered")
-st.title("📋 Smart Attendance – Live Demo")
+# -------------------------------
+# Read session_id from URL (PHONE)
+# -------------------------------
+query_params = st.query_params
+if "session_id" not in st.session_state:
+    sid = query_params.get("session_id")
+    if sid:
+        st.session_state.session_id = sid[0]
+    else:
+        st.session_state.session_id = None
 
-# ---------------- Teacher Panel ----------------
-st.header("👩‍🏫 Teacher Panel")
+st.title("📡 BLE Smart Attendance (Demo)")
 
-teacher_id = st.text_input("Teacher ID")
-subject = st.text_input("Subject")
-classroom = st.text_input("Classroom")
+# ===============================
+# TEACHER PANEL (Laptop)
+# ===============================
+st.header("👨‍🏫 Teacher Panel")
+
+teacher_id = st.text_input("Teacher ID", "teacher_01")
+subject = st.text_input("Subject", "DSA")
+classroom = st.text_input("Classroom", "Room-101")
 
 if st.button("Start Session"):
-    if teacher_id and subject and classroom:
-        res = start_session(teacher_id, subject, classroom)
-        st.session_state["session_id"] = res.get("session_id")
-        st.session_state["marked_students"] = set()
-        st.success(f"Session Started: {st.session_state['session_id']}")
+    response = start_session(teacher_id, subject, classroom)
+    st.session_state.session_id = response["session_id"]
+
+    st.success(f"Session Started!")
+    st.code(st.session_state.session_id)
+
+    # QR code for students
+    join_url = (
+        "https://attendance-for-demo.streamlit.app/"
+        f"?session_id={st.session_state.session_id}"
+    )
+
+    qr = qrcode.make(join_url)
+    buf = BytesIO()
+    qr.save(buf)
+
+    st.image(buf.getvalue(), caption="📱 Scan to Join (Student)")
+
+st.divider()
+
+# ===============================
+# STUDENT PANEL (Phone)
+# ===============================
+st.header("🎓 Student Panel")
+
+student_id = st.text_input("Student ID", "student_01")
+
+if st.button("Mark Attendance"):
+    if not st.session_state.session_id:
+        st.error("Session not joined yet. Scan QR first.")
     else:
-        st.warning("Fill all fields")
+        mark_attendance(st.session_state.session_id, student_id)
+        st.success(f"{student_id} marked present")
 
-session_id = st.session_state.get("session_id")
-marked_students = st.session_state.get("marked_students", set())
-
-# ---------------- Student Demo Panel ----------------
 st.divider()
-st.header("📱 Student Demo Panel")
 
-students = ["student_01", "student_02", "student_03", "student_04"]
-cols = st.columns(len(students))
-
-for col, student in zip(cols, students):
-    with col:
-        disabled = student in marked_students
-        if st.button(f"Mark {student}", disabled=disabled):
-            if session_id:
-                payload = {
-                    "session_id": session_id,
-                    "student_id": student
-                }
-                requests.post(
-                    f"{BACKEND_URL}/attendance/report-presence",
-                    json=payload
-                )
-                marked_students.add(student)
-                st.session_state["marked_students"] = marked_students
-                st.success(f"{student} marked present")
-            else:
-                st.error("Start session first")
-
-# ---------------- Live Attendance ----------------
-st.divider()
-render_attendance_table(session_id)
+# ===============================
+# LIVE ATTENDANCE (Laptop)
+# ===============================
+render_attendance_table(st.session_state.session_id)

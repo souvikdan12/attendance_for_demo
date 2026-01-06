@@ -1,8 +1,6 @@
 import requests
 
-BASE_URL = "https://YOUR_BACKEND_URL"
-
-
+BASE_URL = "https://attendance-for-demo.onrender.com"
 
 
 def start_session(teacher_id, subject, classroom):
@@ -12,11 +10,18 @@ def start_session(teacher_id, subject, classroom):
         "subject": subject,
         "classroom": classroom
     }
-    response = requests.post(url, json=payload)
-    return response.json()
+    return requests.post(url, json=payload).json()
+
+
+def mark_attendance(session_id, student_id):
+    url = f"{BASE_URL}/attendance/report-presence"
+    payload = {
+        "session_id": session_id,
+        "student_id": student_id
+    }
+    return requests.post(url, json=payload).json()
 
 
 def get_attendance(session_id):
     url = f"{BASE_URL}/attendance/session/{session_id}"
-    response = requests.get(url)
-    return response.json()
+    return requests.get(url).json()
