@@ -15,12 +15,14 @@ st.set_page_config(
 # Read session_id from URL (PHONE)
 # -------------------------------
 query_params = st.query_params
+
 if "session_id" not in st.session_state:
-    sid = query_params.get("session_id")
-    if sid:
-        st.session_state.session_id = sid[0]
-    else:
-        st.session_state.session_id = None
+    st.session_state.session_id = None
+
+if "session_id" in query_params:
+    st.session_state.session_id = query_params["session_id"][0]
+
+
 
 st.title("📡 BLE Smart Attendance (Demo)")
 
@@ -41,10 +43,10 @@ if st.button("Start Session"):
     st.code(st.session_state.session_id)
 
     # QR code for students
-    join_url = (
-        "https://attendance-for-demo.streamlit.app/"
-        f"?session_id={st.session_state.session_id}"
-    )
+    BASE_STREAMLIT_URL = "https://attendance-for-demo.streamlit.app"
+    join_url = f"{BASE_STREAMLIT_URL}/?session_id={st.session_state.session_id}"
+
+
 
     qr = qrcode.make(join_url)
     buf = BytesIO()
@@ -53,6 +55,10 @@ if st.button("Start Session"):
     st.image(buf.getvalue(), caption="📱 Scan to Join (Student)")
 
 st.divider()
+
+if st.session_state.session_id:
+    st.info("Joined session automatically via QR")
+
 
 # ===============================
 # STUDENT PANEL (Phone)

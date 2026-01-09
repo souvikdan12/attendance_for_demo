@@ -1,6 +1,4 @@
-# backend/app/attendance/routes.py
-
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from uuid import uuid4
 
 from app.attendance.schemas import (
@@ -16,8 +14,8 @@ router = APIRouter()
 # -------------------------
 # In-memory demo storage
 # -------------------------
-ACTIVE_SESSIONS = {}
-ATTENDANCE_RECORDS = {}
+ACTIVE_SESSIONS: dict = {}
+ATTENDANCE_RECORDS: dict = {}
 
 
 # -------------------------
@@ -47,15 +45,12 @@ def start_session(request: StartSessionRequest):
 @router.post("/report-presence", response_model=PresenceReportResponse)
 def report_presence(request: PresenceReportRequest):
     if request.session_id not in ACTIVE_SESSIONS:
-        return PresenceReportResponse(
-            status="error",
-            message="Invalid or inactive session",
-        )
+        raise HTTPException(status_code=400, detail="Invalid or inactive session")
 
     is_present = evaluate_presence(request.student_id)
 
     if is_present:
-        if request.student_id not in ATTENDANCE_RECORDS[request.session_id]:
+        if request.student_id not in ATTENDANCE_RECORDS.get(request.session_id, []):
             ATTENDANCE_RECORDS[request.session_id].append(request.student_id)
 
         return PresenceReportResponse(
@@ -74,12 +69,8 @@ def report_presence(request: PresenceReportRequest):
 # -------------------------
 @router.get("/session/{session_id}")
 def get_attendance(session_id: str):
-    if session_id not in ATTENDANCE_RECORDS:
-        return {"students": []}
-
-    return {
-        "students": ATTENDANCE_RECORDS[session_id]
-    }
+    students = ATTENDANCE_RECORDS.get(session_id, [])
+    return {"students": students}
 
 
 # -------------------------
